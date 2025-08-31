@@ -61,6 +61,14 @@
             </div>
             <div class="text-right">
                 <div class="text-sm opacity-90" id="currentDate"></div>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="exportData()" class="text-xs bg-white bg-opacity-20 hover:bg-opacity-30 px-2 py-1 rounded transition-colors" title="Fazer backup dos dados">
+                        💾 Backup
+                    </button>
+                    <button onclick="showStorageInfo()" class="text-xs bg-white bg-opacity-20 hover:bg-opacity-30 px-2 py-1 rounded transition-colors" title="Ver informações de armazenamento">
+                        📱 Info
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -252,24 +260,75 @@
             generateTimeSlots();
         });
 
-        // Load data from localStorage
+        // Load data from localStorage with recovery options
         function loadData() {
-            const savedServices = localStorage.getItem('salonServices');
-            const savedAppointments = localStorage.getItem('salonAppointments');
-            
-            if (savedServices) {
-                services = JSON.parse(savedServices);
-            }
-            
-            if (savedAppointments) {
-                appointments = JSON.parse(savedAppointments);
+            try {
+                // Try to load main data
+                const savedServices = localStorage.getItem('salonServices');
+                const savedAppointments = localStorage.getItem('salonAppointments');
+                
+                if (savedServices) {
+                    services = JSON.parse(savedServices);
+                    console.log(`✅ ${services.length} serviços carregados do dispositivo`);
+                }
+                
+                if (savedAppointments) {
+                    appointments = JSON.parse(savedAppointments);
+                    console.log(`✅ ${appointments.length} agendamentos carregados do dispositivo`);
+                }
+                
+                // Check for backup if main data is corrupted or missing
+                if ((!savedServices || !savedAppointments) && localStorage.getItem('salonBackup')) {
+                    console.log('🔄 Tentando recuperar dados do backup...');
+                    const backup = JSON.parse(localStorage.getItem('salonBackup'));
+                    
+                    if (!savedServices && backup.services) {
+                        services = backup.services;
+                        console.log('✅ Serviços recuperados do backup');
+                    }
+                    
+                    if (!savedAppointments && backup.appointments) {
+                        appointments = backup.appointments;
+                        console.log('✅ Agendamentos recuperados do backup');
+                    }
+                }
+                
+                // Show storage info
+                showStorageInfo();
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                alert('⚠️ Erro ao carregar dados salvos. Usando dados padrão.');
             }
         }
 
-        // Save data to localStorage
+        // Save data to localStorage with backup
         function saveData() {
-            localStorage.setItem('salonServices', JSON.stringify(services));
-            localStorage.setItem('salonAppointments', JSON.stringify(appointments));
+            try {
+                // Save main data
+                localStorage.setItem('salonServices', JSON.stringify(services));
+                localStorage.setItem('salonAppointments', JSON.stringify(appointments));
+                
+                // Create backup with timestamp
+                const backupData = {
+                    services: services,
+                    appointments: appointments,
+                    lastBackup: new Date().toISOString(),
+                    version: '1.0'
+                };
+                localStorage.setItem('salonBackup', JSON.stringify(backupData));
+                
+                // Save individual appointment history for better tracking
+                appointments.forEach(appointment => {
+                    const key = `appointment_${appointment.id}`;
+                    localStorage.setItem(key, JSON.stringify(appointment));
+                });
+                
+                console.log('✅ Dados salvos com sucesso no dispositivo');
+            } catch (error) {
+                console.error('❌ Erro ao salvar dados:', error);
+                alert('⚠️ Erro ao salvar dados. Verifique o espaço de armazenamento do dispositivo.');
+            }
         }
 
         // Update current date
@@ -310,9 +369,10 @@
             if (sectionName === 'appointments') {
                 displayAppointments();
             } else if (sectionName === 'schedule') {
-                // Regenerate calendar and time slots to ensure they work
+                // Regenerate calendar, time slots and service select to ensure they work
                 generateCalendar();
                 generateTimeSlots();
+                generateServiceSelect();
             }
             
             // Reset edit mode when changing sections
@@ -562,7 +622,17 @@
         // Generate service select
         function generateServiceSelect() {
             const serviceSelect = document.getElementById('serviceSelect');
-            serviceSelect.innerHTML = '<option value="">Selecione um serviço</option>';
+            if (!serviceSelect) return;
+            
+            // Clear existing options and event listeners
+            serviceSelect.innerHTML = '';
+            serviceSelect.removeEventListener('change', handleServiceChange);
+            
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Selecione um serviço';
+            serviceSelect.appendChild(defaultOption);
             
             const categories = [...new Set(services.map(s => s.category))];
             
@@ -581,15 +651,24 @@
                 serviceSelect.appendChild(optgroup);
             });
             
-            serviceSelect.addEventListener('change', function() {
-                const servicePriceDiv = document.getElementById('servicePrice');
-                if (this.value) {
+            // Add event listener
+            serviceSelect.addEventListener('change', handleServiceChange);
+        }
+
+        // Handle service selection change
+        function handleServiceChange() {
+            const servicePriceDiv = document.getElementById('servicePrice');
+            if (this.value) {
+                try {
                     const service = JSON.parse(this.value);
                     servicePriceDiv.textContent = `Valor: R$ ${service.price.toFixed(2)}`;
-                } else {
+                } catch (error) {
+                    console.error('Erro ao processar serviço:', error);
                     servicePriceDiv.textContent = '';
                 }
-            });
+            } else {
+                servicePriceDiv.textContent = '';
+            }
         }
 
         // Generate calendar
@@ -769,10 +848,13 @@
                 // Generate WhatsApp message
                 generateWhatsAppMessage(appointment);
                 
+                // Add to Google Calendar
+                addToGoogleCalendar(appointment);
+                
                 // Clear form
                 clearScheduleForm();
                 
-                alert('✅ Agendamento realizado com sucesso! A mensagem do WhatsApp será aberta.');
+                alert('✅ Agendamento realizado com sucesso!\n\n📱 Dados salvos no seu celular\n💬 Mensagem do WhatsApp será aberta\n📅 Compromisso criado no Google Agenda\n💾 Backup automático criado');
                 
             } catch (error) {
                 console.error('Erro ao processar agendamento:', error);
@@ -798,6 +880,72 @@
             
             selectedDate = null;
             selectedTime = null;
+        }
+
+        // Add to Google Calendar
+        function addToGoogleCalendar(appointment) {
+            try {
+                const appointmentDate = new Date(appointment.date);
+                const [hours, minutes] = appointment.time.split(':');
+                
+                // Set start time
+                const startTime = new Date(appointmentDate);
+                startTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                
+                // Set end time (1.5 hours later for most services)
+                const endTime = new Date(startTime);
+                endTime.setHours(startTime.getHours() + 1, startTime.getMinutes() + 30);
+                
+                // Format dates for Google Calendar (YYYYMMDDTHHMMSSZ)
+                const formatGoogleDate = (date) => {
+                    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+                };
+                
+                const startFormatted = formatGoogleDate(startTime);
+                const endFormatted = formatGoogleDate(endTime);
+                
+                // Create event details
+                const eventTitle = `💅 ${appointment.service} - ${appointment.clientName}`;
+                const eventDetails = `📋 AGENDAMENTO SALÃO DA MINHA GATINHA
+━━━━━━━━━━━━━━━━━━━━━
+
+👤 Cliente: ${appointment.clientName}
+📞 Telefone: ${appointment.clientPhone}
+💄 Serviço: ${appointment.service}
+💰 Valor: R$ ${appointment.price.toFixed(2)}
+💳 Pagamento: ${appointment.paymentStatus.toUpperCase()}
+
+━━━━━━━━━━━━━━━━━━━━━
+📍 Local: Salão da minha gatinha
+Rua das Flores, 123 - Centro
+
+⚠️ Lembrete:
+• Chegue 10 minutos antes
+• Ligue em caso de atraso
+• Cancelamentos com antecedência`;
+
+                const eventLocation = 'Salão da minha gatinha - Rua das Flores, 123, Centro';
+                
+                // Create Google Calendar URL
+                const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${startFormatted}/${endFormatted}&details=${encodeURIComponent(eventDetails)}&location=${encodeURIComponent(eventLocation)}&sf=true&output=xml`;
+                
+                // Open Google Calendar in new tab
+                window.open(googleCalendarUrl, '_blank');
+                
+                console.log('📅 Compromisso criado no Google Agenda:', {
+                    cliente: appointment.clientName,
+                    data: startTime.toLocaleString('pt-BR'),
+                    servico: appointment.service
+                });
+                
+            } catch (error) {
+                console.error('❌ Erro ao criar compromisso no Google Agenda:', error);
+                alert('⚠️ Não foi possível criar o compromisso no Google Agenda automaticamente.\nVocê pode adicionar manualmente:\n\n' + 
+                      `📅 Data: ${new Date(appointment.date).toLocaleDateString('pt-BR')}\n` +
+                      `⏰ Horário: ${appointment.time}\n` +
+                      `👤 Cliente: ${appointment.clientName}\n` +
+                      `💄 Serviço: ${appointment.service}`);
+            }
         }
 
         // Generate WhatsApp message
@@ -925,7 +1073,10 @@ Rua das Flores, 123 - Centro
                         
                         <div class="flex gap-2 mt-4">
                             <button onclick="resendWhatsApp(${appointment.id})" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                                📱 Reenviar WhatsApp
+                                📱 WhatsApp
+                            </button>
+                            <button onclick="addExistingToGoogleCalendar(${appointment.id})" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                                📅 Google Agenda
                             </button>
                             <button onclick="deleteAppointment(${appointment.id})" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
                                 🗑️
@@ -944,6 +1095,14 @@ Rua das Flores, 123 - Centro
             }
         }
 
+        // Add existing appointment to Google Calendar
+        function addExistingToGoogleCalendar(appointmentId) {
+            const appointment = appointments.find(a => a.id === appointmentId);
+            if (appointment) {
+                addToGoogleCalendar(appointment);
+            }
+        }
+
         // Delete appointment
         function deleteAppointment(appointmentId) {
             if (confirm('❌ Tem certeza que deseja excluir este agendamento?')) {
@@ -953,11 +1112,93 @@ Rua das Flores, 123 - Centro
             }
         }
 
+        // Show storage information
+        function showStorageInfo() {
+            try {
+                const totalServices = services.length;
+                const totalAppointments = appointments.length;
+                const lastBackup = localStorage.getItem('salonBackup') ? 
+                    JSON.parse(localStorage.getItem('salonBackup')).lastBackup : null;
+                
+                console.log('📱 INFORMAÇÕES DE ARMAZENAMENTO:');
+                console.log(`📋 Serviços salvos: ${totalServices}`);
+                console.log(`📅 Agendamentos salvos: ${totalAppointments}`);
+                if (lastBackup) {
+                    console.log(`💾 Último backup: ${new Date(lastBackup).toLocaleString('pt-BR')}`);
+                }
+                console.log('💡 Todos os dados ficam salvos no seu celular/dispositivo');
+            } catch (error) {
+                console.error('Erro ao mostrar informações de armazenamento:', error);
+            }
+        }
+
+        // Export data for backup
+        function exportData() {
+            try {
+                const exportData = {
+                    services: services,
+                    appointments: appointments,
+                    exportDate: new Date().toISOString(),
+                    salonName: 'Salão da minha gatinha'
+                };
+                
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `salon-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                alert('✅ Backup exportado com sucesso! Arquivo salvo na pasta Downloads.');
+            } catch (error) {
+                console.error('Erro ao exportar dados:', error);
+                alert('❌ Erro ao exportar backup.');
+            }
+        }
+
+        // Clear all data (with confirmation)
+        function clearAllData() {
+            if (confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados salvos (serviços e agendamentos). Tem certeza?')) {
+                if (confirm('🚨 ÚLTIMA CONFIRMAÇÃO: Todos os dados serão perdidos permanentemente. Continuar?')) {
+                    try {
+                        // Clear all localStorage data
+                        const keys = Object.keys(localStorage);
+                        keys.forEach(key => {
+                            if (key.startsWith('salon') || key.startsWith('appointment_')) {
+                                localStorage.removeItem(key);
+                            }
+                        });
+                        
+                        // Reset to default data
+                        services = [
+                            { category: 'Unhas', name: 'Esmaltação Simples', description: 'Esmaltação tradicional com cores variadas', price: 25 },
+                            { category: 'Unhas', name: 'Esmaltação em Gel', description: 'Esmaltação duradoura com acabamento profissional', price: 40 },
+                            { category: 'Cabelos', name: 'Corte Feminino', description: 'Cortes modernos e personalizados', price: 50 },
+                            { category: 'Outros', name: 'Sobrancelha', description: 'Design e modelagem de sobrancelhas', price: 30 }
+                        ];
+                        appointments = [];
+                        
+                        // Regenerate all sections
+                        generateCatalog();
+                        generatePricingList();
+                        generateServiceSelect();
+                        displayAppointments();
+                        
+                        alert('✅ Todos os dados foram apagados e o sistema foi resetado.');
+                    } catch (error) {
+                        console.error('Erro ao limpar dados:', error);
+                        alert('❌ Erro ao limpar dados.');
+                    }
+                }
+            }
+        }
+
         // Open WhatsApp
         function openWhatsApp() {
             const message = encodeURIComponent('Olá! Gostaria de agendar um horário no Salão da minha gatinha! 💅✨');
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977db072a70b7a84',t:'MTc1NjY1NTQ4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977dc28353137a84',t:'MTc1NjY1NjIyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
