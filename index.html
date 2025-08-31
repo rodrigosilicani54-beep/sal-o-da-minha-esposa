@@ -177,7 +177,18 @@
 
         <!-- Calendar -->
         <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
-            <h3 class="text-lg font-semibold text-gray-800 mb-3">Escolher Data</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Escolher Data</h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="changeMonth(-1)" class="bg-pink-500 hover:bg-pink-600 text-white p-2 rounded-lg transition-colors">
+                        ← Anterior
+                    </button>
+                    <div id="currentMonthYear" class="text-sm font-medium text-gray-700 min-w-[120px] text-center"></div>
+                    <button onclick="changeMonth(1)" class="bg-pink-500 hover:bg-pink-600 text-white p-2 rounded-lg transition-colors">
+                        Próximo →
+                    </button>
+                </div>
+            </div>
             <div id="calendar" class="grid grid-cols-7 gap-1 text-center">
                 <!-- Calendar will be generated here -->
             </div>
@@ -306,6 +317,8 @@
         let selectedDate = null;
         let selectedTime = null;
         let isEditMode = false;
+        let currentCalendarMonth = new Date().getMonth();
+        let currentCalendarYear = new Date().getFullYear();
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
@@ -745,11 +758,19 @@
         // Generate calendar
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
+            const currentMonthYearDiv = document.getElementById('currentMonthYear');
             calendar.innerHTML = ''; // Clear existing calendar
             
             const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
+            
+            // Update month/year display
+            const monthNames = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            if (currentMonthYearDiv) {
+                currentMonthYearDiv.textContent = `${monthNames[currentCalendarMonth]} ${currentCalendarYear}`;
+            }
             
             // Days of week header
             const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -761,8 +782,8 @@
             });
             
             // Get first day of month and number of days
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+            const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
             
             // Add empty cells for days before month starts
             for (let i = 0; i < firstDay; i++) {
@@ -774,7 +795,7 @@
             // Add days of month
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayElement = document.createElement('div');
-                const dayDate = new Date(currentYear, currentMonth, day);
+                const dayDate = new Date(currentCalendarYear, currentCalendarMonth, day);
                 const isToday = dayDate.toDateString() === today.toDateString();
                 const isPast = dayDate < today && !isToday;
                 
@@ -784,8 +805,8 @@
                 
                 dayElement.textContent = day;
                 dayElement.setAttribute('data-day', day);
-                dayElement.setAttribute('data-month', currentMonth);
-                dayElement.setAttribute('data-year', currentYear);
+                dayElement.setAttribute('data-month', currentCalendarMonth);
+                dayElement.setAttribute('data-year', currentCalendarYear);
                 
                 if (!isPast) {
                     dayElement.addEventListener('click', function(e) {
@@ -811,6 +832,26 @@
                 
                 calendar.appendChild(dayElement);
             }
+        }
+
+        // Change calendar month
+        function changeMonth(direction) {
+            currentCalendarMonth += direction;
+            
+            // Handle year changes
+            if (currentCalendarMonth > 11) {
+                currentCalendarMonth = 0;
+                currentCalendarYear++;
+            } else if (currentCalendarMonth < 0) {
+                currentCalendarMonth = 11;
+                currentCalendarYear--;
+            }
+            
+            // Clear selected date when changing months
+            selectedDate = null;
+            
+            // Regenerate calendar
+            generateCalendar();
         }
 
         // Generate time slots
@@ -1343,5 +1384,5 @@ ${salonSettings.address}
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977dd63e23fa80fe',t:'MTc1NjY1NzAzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977de422c157cdc3',t:'MTc1NjY1NzYwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
