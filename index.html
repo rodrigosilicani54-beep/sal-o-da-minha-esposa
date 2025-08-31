@@ -338,17 +338,24 @@
         };
         
         let services = [
-            { category: 'Unhas', name: 'Esmaltação Simples', description: 'Esmaltação tradicional com cores variadas', price: 25 },
             { category: 'Unhas', name: 'Esmaltação em Gel', description: 'Esmaltação duradoura com acabamento profissional', price: 40 },
-            { category: 'Unhas', name: 'Nail Art', description: 'Decorações artísticas personalizadas', price: 60 },
-            { category: 'Unhas', name: 'Alongamento', description: 'Alongamento com gel ou fibra de vidro', price: 80 },
-            { category: 'Cabelos', name: 'Corte Feminino', description: 'Cortes modernos e personalizados', price: 50 },
-            { category: 'Cabelos', name: 'Coloração', description: 'Tintura completa ou mechas', price: 120 },
-            { category: 'Cabelos', name: 'Hidratação', description: 'Tratamento nutritivo para cabelos', price: 70 },
-            { category: 'Cabelos', name: 'Escova Progressiva', description: 'Alisamento e redução de volume', price: 200 },
-            { category: 'Cabelos', name: 'Penteado', description: 'Penteados para eventos especiais', price: 80 },
-            { category: 'Outros', name: 'Sobrancelha', description: 'Design e modelagem de sobrancelhas', price: 30 },
-            { category: 'Outros', name: 'Depilação', description: 'Depilação com cera', price: 45 }
+            { category: 'Unhas', name: 'Alongamento de Gel ou Fibra de Vidro', description: 'Alongamento profissional com gel ou fibra de vidro', price: 130 },
+            { category: 'Unhas', name: 'Manutenção do Alongamento', description: 'Manutenção e retoque do alongamento', price: 90 },
+            { category: 'Unhas', name: 'Manicure mais Pedicure', description: 'Serviço completo de manicure e pedicure', price: 50 },
+            { category: 'Unhas', name: 'Esmaltação Artística Unhas Decoradas', description: 'Decorações artísticas e personalizadas', price: 15 },
+            { category: 'Unhas', name: 'Pacote Unhas 2 Pedicure mais 4 Manicures', description: 'Pacote promocional com 2 pedicures e 4 manicures', price: 150 },
+            { category: 'Cabelos', name: 'Corte Feminino', description: 'Cortes modernos e personalizados', price: 30 },
+            { category: 'Cabelos', name: 'Coloração', description: 'Tintura completa ou mechas', price: 45 },
+            { category: 'Cabelos', name: 'Hidratação', description: 'Tratamento nutritivo para cabelos', price: 50 },
+            { category: 'Cabelos', name: 'Escova Progressiva', description: 'Alisamento e redução de volume a partir de', price: 100 },
+            { category: 'Cabelos', name: 'Progressiva sem Formol', description: 'Progressiva sem formol a partir de', price: 90 },
+            { category: 'Cabelos', name: 'Botox Capilar', description: 'Tratamento de botox capilar a partir de', price: 80 },
+            { category: 'Cabelos', name: 'Pacote Hidratação Reconstrução e Cauterização', description: 'Pacote completo de tratamentos capilares', price: 130 },
+            { category: 'Outros', name: 'Sobrancelha', description: 'Design e modelagem de sobrancelhas', price: 15 },
+            { category: 'Outros', name: 'Sobrancelhas com Henna', description: 'Design de sobrancelhas com aplicação de henna', price: 20 },
+            { category: 'Outros', name: 'Depilação Buço', description: 'Depilação da região do buço', price: 15 },
+            { category: 'Outros', name: 'Limpeza de Pele', description: 'Limpeza facial profunda', price: 30 },
+            { category: 'Outros', name: 'Cílios com a Profissional Suellen Allencar', description: 'Serviços de cílios com profissional especializada a partir de', price: 100 }
         ];
 
         let appointments = [];
@@ -1433,10 +1440,24 @@ ${salonSettings.address}
                         
                         // Reset to default data
                         services = [
-                            { category: 'Unhas', name: 'Esmaltação Simples', description: 'Esmaltação tradicional com cores variadas', price: 25 },
                             { category: 'Unhas', name: 'Esmaltação em Gel', description: 'Esmaltação duradoura com acabamento profissional', price: 40 },
-                            { category: 'Cabelos', name: 'Corte Feminino', description: 'Cortes modernos e personalizados', price: 50 },
-                            { category: 'Outros', name: 'Sobrancelha', description: 'Design e modelagem de sobrancelhas', price: 30 }
+                            { category: 'Unhas', name: 'Alongamento de Gel ou Fibra de Vidro', description: 'Alongamento profissional com gel ou fibra de vidro', price: 130 },
+                            { category: 'Unhas', name: 'Manutenção do Alongamento', description: 'Manutenção e retoque do alongamento', price: 90 },
+                            { category: 'Unhas', name: 'Manicure mais Pedicure', description: 'Serviço completo de manicure e pedicure', price: 50 },
+                            { category: 'Unhas', name: 'Esmaltação Artística Unhas Decoradas', description: 'Decorações artísticas e personalizadas', price: 15 },
+                            { category: 'Unhas', name: 'Pacote Unhas 2 Pedicure mais 4 Manicures', description: 'Pacote promocional com 2 pedicures e 4 manicures', price: 150 },
+                            { category: 'Cabelos', name: 'Corte Feminino', description: 'Cortes modernos e personalizados', price: 30 },
+                            { category: 'Cabelos', name: 'Coloração', description: 'Tintura completa ou mechas', price: 45 },
+                            { category: 'Cabelos', name: 'Hidratação', description: 'Tratamento nutritivo para cabelos', price: 50 },
+                            { category: 'Cabelos', name: 'Escova Progressiva', description: 'Alisamento e redução de volume a partir de', price: 100 },
+                            { category: 'Cabelos', name: 'Progressiva sem Formol', description: 'Progressiva sem formol a partir de', price: 90 },
+                            { category: 'Cabelos', name: 'Botox Capilar', description: 'Tratamento de botox capilar a partir de', price: 80 },
+                            { category: 'Cabelos', name: 'Pacote Hidratação Reconstrução e Cauterização', description: 'Pacote completo de tratamentos capilares', price: 130 },
+                            { category: 'Outros', name: 'Sobrancelha', description: 'Design e modelagem de sobrancelhas', price: 15 },
+                            { category: 'Outros', name: 'Sobrancelhas com Henna', description: 'Design de sobrancelhas com aplicação de henna', price: 20 },
+                            { category: 'Outros', name: 'Depilação Buço', description: 'Depilação da região do buço', price: 15 },
+                            { category: 'Outros', name: 'Limpeza de Pele', description: 'Limpeza facial profunda', price: 30 },
+                            { category: 'Outros', name: 'Cílios com a Profissional Suellen Allencar', description: 'Serviços de cílios com profissional especializada a partir de', price: 100 }
                         ];
                         appointments = [];
                         
@@ -1740,5 +1761,6 @@ ${salonSettings.address}
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e1dbab66af16b',t:'MTc1NjY1OTk2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e3a49269ff1b5',t:'MTc1NjY2MTEzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
