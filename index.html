@@ -101,9 +101,14 @@
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Catálogo de Serviços</h2>
                 <p class="text-gray-600">Nossos serviços de beleza</p>
             </div>
-            <button onclick="toggleEditMode()" id="editCatalogBtn" class="btn-primary text-white py-2 px-4 rounded-lg font-medium">
-                ✏️ Editar
-            </button>
+            <div class="flex gap-2">
+                <button onclick="showAddServiceForm()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    ➕ Adicionar
+                </button>
+                <button onclick="toggleEditMode()" id="editCatalogBtn" class="btn-primary text-white py-2 px-4 rounded-lg font-medium">
+                    ✏️ Editar
+                </button>
+            </div>
         </div>
 
         <div id="catalogContent" class="space-y-4">
@@ -544,16 +549,34 @@
         // Show add service form
         function showAddServiceForm(category = '') {
             const form = document.getElementById('addServiceForm');
-            form.classList.remove('hidden');
-            
-            if (category) {
-                document.getElementById('newServiceCategory').value = category;
+            if (!form) {
+                console.error('Formulário de adicionar serviço não encontrado');
+                return;
             }
             
-            // Clear form
-            document.getElementById('newServiceName').value = '';
-            document.getElementById('newServiceDescription').value = '';
-            document.getElementById('newServicePrice').value = '';
+            form.classList.remove('hidden');
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            if (category) {
+                const categorySelect = document.getElementById('newServiceCategory');
+                if (categorySelect) {
+                    categorySelect.value = category;
+                }
+            }
+            
+            // Clear form fields
+            const nameField = document.getElementById('newServiceName');
+            const descField = document.getElementById('newServiceDescription');
+            const priceField = document.getElementById('newServicePrice');
+            
+            if (nameField) nameField.value = '';
+            if (descField) descField.value = '';
+            if (priceField) priceField.value = '';
+            
+            // Focus on name field
+            if (nameField) {
+                setTimeout(() => nameField.focus(), 100);
+            }
         }
 
         // Add new service
@@ -1384,5 +1407,5 @@ ${salonSettings.address}
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977de422c157cdc3',t:'MTc1NjY1NzYwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977dfe4204617a2f',t:'MTc1NjY1ODY3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
