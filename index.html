@@ -101,8 +101,14 @@
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Catálogo de Serviços</h2>
                 <p class="text-gray-600">Nossos serviços de beleza</p>
             </div>
-            <div class="flex gap-2">
-                <button onclick="showAddServiceForm()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="sendCatalogWhatsApp()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    📱 Enviar Catálogo
+                </button>
+                <button onclick="showCatalogLink()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    🔗 Link do Catálogo
+                </button>
+                <button onclick="showAddServiceForm()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
                     ➕ Adicionar
                 </button>
                 <button onclick="toggleEditMode()" id="editCatalogBtn" class="btn-primary text-white py-2 px-4 rounded-lg font-medium">
@@ -288,6 +294,30 @@
         </div>
     </section>
 
+    <!-- Public Catalog Section (Hidden by default) -->
+    <section id="publicCatalog" class="section hidden p-4">
+        <div class="mb-6 text-center">
+            <div class="text-6xl mb-4">💅</div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2" id="publicSalonName">Salão da minha gatinha</h1>
+            <p class="text-gray-600">Nossos Serviços de Beleza</p>
+            <div class="mt-4 p-3 bg-pink-50 rounded-lg">
+                <p class="text-sm text-gray-700">📍 <span id="publicSalonAddress">Rua das Graviolas, N° 350</span></p>
+                <p class="text-sm text-gray-700">📞 <span id="publicSalonPhone">(11) 95246-8795</span></p>
+            </div>
+        </div>
+
+        <div id="publicCatalogContent" class="space-y-4">
+            <!-- Public catalog will be generated here -->
+        </div>
+
+        <div class="mt-8 text-center">
+            <button onclick="contactWhatsApp()" class="btn-primary text-white py-3 px-8 rounded-xl font-semibold text-lg shadow-lg">
+                📱 Agendar pelo WhatsApp
+            </button>
+            <p class="text-xs text-gray-500 mt-2">Clique para entrar em contato e agendar seu horário</p>
+        </div>
+    </section>
+
     <!-- Floating WhatsApp Button -->
     <button onclick="openWhatsApp()" class="floating-btn btn-primary text-white p-4 rounded-full shadow-lg">
         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -329,7 +359,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             updateCurrentDate();
-            showSection('catalog');
+            
+            // Check if URL has catalog parameter to show public view
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('view') === 'catalog') {
+                showPublicCatalog();
+            } else {
+                showSection('catalog');
+            }
+            
             generateCatalog();
             generatePricingList();
             generateServiceSelect();
@@ -1401,11 +1439,218 @@ ${salonSettings.address}
             }
         }
 
+        // Send catalog via WhatsApp
+        function sendCatalogWhatsApp() {
+            const catalogMessage = generateCatalogMessage();
+            const encodedMessage = encodeURIComponent(catalogMessage);
+            
+            // Ask for client's phone number
+            const clientPhone = prompt('📱 Digite o número do WhatsApp da cliente (com DDD):');
+            if (!clientPhone) return;
+            
+            // Clean phone number
+            const cleanPhone = clientPhone.replace(/\D/g, '');
+            let phoneWithCountryCode = cleanPhone;
+            
+            if (cleanPhone.length === 11 && cleanPhone.startsWith('11')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            } else if (cleanPhone.length === 10) {
+                phoneWithCountryCode = '5511' + cleanPhone;
+            } else if (!cleanPhone.startsWith('55')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            }
+            
+            // Open WhatsApp with catalog
+            const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Generate catalog message for WhatsApp
+        function generateCatalogMessage() {
+            const categories = [...new Set(services.map(s => s.category))];
+            const categoryEmojis = {
+                'Unhas': '💅',
+                'Cabelos': '💇‍♀️',
+                'Outros': '✨'
+            };
+            
+            let message = `💅 *${salonSettings.name.toUpperCase()}*\n`;
+            message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+            message += `📋 *CATÁLOGO DE SERVIÇOS*\n\n`;
+            
+            categories.forEach(category => {
+                const categoryServices = services.filter(s => s.category === category);
+                message += `${categoryEmojis[category] || '✨'} *${category.toUpperCase()}*\n`;
+                message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+                
+                categoryServices.forEach(service => {
+                    message += `• *${service.name}*\n`;
+                    message += `  ${service.description}\n`;
+                    message += `  💰 *R$ ${service.price.toFixed(2)}*\n\n`;
+                });
+            });
+            
+            message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+            message += `📍 *Endereço:* ${salonSettings.address}\n`;
+            message += `📞 *Telefone:* ${salonSettings.phone}\n\n`;
+            message += `💬 *Para agendar, responda esta mensagem!*\n`;
+            message += `✨ Estamos ansiosas para cuidar de você! ✨`;
+            
+            return message;
+        }
+
+        // Show catalog link modal
+        function showCatalogLink() {
+            const currentUrl = window.location.href.split('?')[0];
+            const catalogUrl = `${currentUrl}?view=catalog`;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">🔗 Link do Catálogo Público</h3>
+                    <p class="text-gray-600 mb-4">Compartilhe este link com suas clientes para que elas vejam seus serviços:</p>
+                    
+                    <div class="bg-gray-50 p-3 rounded-lg mb-4 break-all text-sm">
+                        <code>${catalogUrl}</code>
+                    </div>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <button onclick="copyToClipboard('${catalogUrl}')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium">
+                            📋 Copiar Link
+                        </button>
+                        <button onclick="shareViaWhatsApp('${catalogUrl}')" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium">
+                            📱 Compartilhar
+                        </button>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-xs text-yellow-700">
+                            💡 <strong>Dica:</strong> Quem acessar este link verá apenas o catálogo de serviços, sem poder editar nada.
+                        </p>
+                    </div>
+                    
+                    <button onclick="this.parentElement.parentElement.remove()" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-medium">
+                        ✅ Fechar
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Link copiado para a área de transferência!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ Link copiado!');
+            });
+        }
+
+        // Share catalog link via WhatsApp
+        function shareViaWhatsApp(catalogUrl) {
+            const message = `💅 Olá! Confira nosso catálogo de serviços do ${salonSettings.name}:\n\n🔗 ${catalogUrl}\n\n✨ Escolha seu serviço e entre em contato para agendar!`;
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        }
+
+        // Show public catalog view
+        function showPublicCatalog() {
+            // Hide header and navigation
+            document.querySelector('header').style.display = 'none';
+            document.querySelector('nav').style.display = 'none';
+            document.querySelector('.floating-btn').style.display = 'none';
+            
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show public catalog
+            document.getElementById('publicCatalog').classList.remove('hidden');
+            
+            // Update public catalog content
+            generatePublicCatalog();
+            updatePublicSalonInfo();
+        }
+
+        // Generate public catalog
+        function generatePublicCatalog() {
+            const publicCatalogContent = document.getElementById('publicCatalogContent');
+            const categories = [...new Set(services.map(s => s.category))];
+            
+            const categoryEmojis = {
+                'Unhas': '💅',
+                'Cabelos': '💇‍♀️',
+                'Outros': '✨'
+            };
+            
+            publicCatalogContent.innerHTML = categories.map(category => {
+                const categoryServices = services.filter(s => s.category === category);
+                
+                return `
+                    <div class="service-card rounded-xl p-6 shadow-custom">
+                        <div class="flex items-center mb-4">
+                            <div class="text-4xl mr-4">${categoryEmojis[category] || '✨'}</div>
+                            <h2 class="text-2xl font-bold text-gray-800">${category}</h2>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                            ${categoryServices.map(service => `
+                                <div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-pink-400">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <h3 class="text-lg font-semibold text-gray-800 mb-1">${service.name}</h3>
+                                            <p class="text-gray-600 mb-2">${service.description}</p>
+                                            <div class="flex items-center">
+                                                <span class="text-2xl font-bold text-pink-600">R$ ${service.price.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update public salon info
+        function updatePublicSalonInfo() {
+            document.getElementById('publicSalonName').textContent = salonSettings.name;
+            document.getElementById('publicSalonAddress').textContent = salonSettings.address;
+            document.getElementById('publicSalonPhone').textContent = salonSettings.phone;
+        }
+
+        // Contact via WhatsApp from public catalog
+        function contactWhatsApp() {
+            const message = encodeURIComponent(`Olá! Vi o catálogo do ${salonSettings.name} e gostaria de agendar um horário! 💅✨`);
+            const cleanPhone = salonSettings.phone.replace(/\D/g, '');
+            let phoneWithCountryCode = cleanPhone;
+            
+            if (cleanPhone.length === 11 && cleanPhone.startsWith('11')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            } else if (cleanPhone.length === 10) {
+                phoneWithCountryCode = '5511' + cleanPhone;
+            } else if (!cleanPhone.startsWith('55')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            }
+            
+            window.open(`https://wa.me/${phoneWithCountryCode}?text=${message}`, '_blank');
+        }
+
         // Open WhatsApp
         function openWhatsApp() {
             const message = encodeURIComponent(`Olá! Gostaria de agendar um horário no ${salonSettings.name}! 💅✨`);
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977dfe4204617a2f',t:'MTc1NjY1ODY3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e094b2181fa0a',t:'MTc1NjY1OTEyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
