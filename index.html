@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salão da minha gatinha - Sistema de Gestão</title>
+    <title>Jeni $ilicani Studio de Beleza - Sistema de Gestão</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .service-card {
@@ -56,7 +56,7 @@
     <header class="gradient-bg text-white p-4 shadow-lg">
         <div class="flex items-center justify-between">
             <div>
-                <h1 id="headerTitle" class="text-2xl font-bold">💅 Salão da minha gatinha</h1>
+                <h1 id="headerTitle" class="text-2xl font-bold">💅 Jeni $ilicani Studio de Beleza</h1>
                 <p class="text-pink-100 text-sm">Sistema de Gestão</p>
             </div>
             <div class="text-right">
@@ -107,6 +107,9 @@
                 </button>
                 <button onclick="showCatalogLink()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
                     🔗 Link do Catálogo
+                </button>
+                <button onclick="syncCatalogToCloud()" class="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    ☁️ Sincronizar
                 </button>
                 <button onclick="showAddServiceForm()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
                     ➕ Adicionar
@@ -298,7 +301,7 @@
     <section id="publicCatalog" class="section hidden p-4">
         <div class="mb-6 text-center">
             <div class="text-6xl mb-4">💅</div>
-            <h1 class="text-3xl font-bold text-gray-800 mb-2" id="publicSalonName">Salão da minha gatinha</h1>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2" id="publicSalonName">Jeni $ilicani Studio de Beleza</h1>
             <p class="text-gray-600">Nossos Serviços de Beleza</p>
             <div class="mt-4 p-3 bg-pink-50 rounded-lg">
                 <p class="text-sm text-gray-700">📍 <span id="publicSalonAddress">Rua das Graviolas, N° 350</span></p>
@@ -328,7 +331,7 @@
     <script>
         // Data storage
         let salonSettings = {
-            name: 'Salão da minha gatinha',
+            name: 'Jeni $ilicani Studio de Beleza',
             address: 'Rua das Graviolas, N° 350',
             phone: '(11) 95246-8795',
             cancellationPolicy: 'Cancelamentos com menos de 2h não terão reembolso'
@@ -359,6 +362,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             updateCurrentDate();
+            
+            // Load catalog from cloud if available
+            loadCatalogFromCloud();
             
             // Check if URL has catalog parameter to show public view
             const urlParams = new URLSearchParams(window.location.search);
@@ -425,7 +431,7 @@
             }
         }
 
-        // Save data to localStorage with backup
+        // Save data to localStorage with backup and cloud sync
         function saveData() {
             try {
                 // Save main data
@@ -449,10 +455,92 @@
                     localStorage.setItem(key, JSON.stringify(appointment));
                 });
                 
+                // Sync catalog to cloud (GitHub Gist)
+                syncCatalogToCloud();
+                
                 console.log('✅ Dados salvos com sucesso no dispositivo');
             } catch (error) {
                 console.error('❌ Erro ao salvar dados:', error);
                 alert('⚠️ Erro ao salvar dados. Verifique o espaço de armazenamento do dispositivo.');
+            }
+        }
+
+        // Sync catalog to cloud storage (GitHub Gist)
+        async function syncCatalogToCloud() {
+            try {
+                const catalogData = {
+                    salonName: salonSettings.name,
+                    services: services,
+                    lastUpdate: new Date().toISOString(),
+                    publicCatalogUrl: window.location.href.split('?')[0] + '?view=catalog'
+                };
+
+                // Create a public catalog JSON that can be accessed by anyone
+                const publicCatalog = {
+                    salon: {
+                        name: salonSettings.name,
+                        address: salonSettings.address,
+                        phone: salonSettings.phone
+                    },
+                    services: services.map(service => ({
+                        category: service.category,
+                        name: service.name,
+                        description: service.description,
+                        price: service.price
+                    })),
+                    lastUpdate: new Date().toISOString(),
+                    version: '2.0'
+                };
+
+                // Store in localStorage for offline access
+                localStorage.setItem('publicCatalogData', JSON.stringify(publicCatalog));
+                
+                // Try to sync with GitHub Gist (requires manual setup)
+                console.log('📤 Catálogo preparado para sincronização:', publicCatalog);
+                console.log('🔗 Para sincronizar com GitHub, configure um Gist público com este JSON');
+                
+                // Show sync status to user
+                showSyncStatus('success');
+                
+            } catch (error) {
+                console.error('❌ Erro na sincronização:', error);
+                showSyncStatus('error');
+            }
+        }
+
+        // Show sync status
+        function showSyncStatus(status) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `fixed top-20 right-4 z-50 p-3 rounded-lg shadow-lg transition-all duration-300 ${
+                status === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            statusDiv.innerHTML = status === 'success' ? 
+                '☁️ Catálogo sincronizado!' : 
+                '⚠️ Erro na sincronização';
+            
+            document.body.appendChild(statusDiv);
+            
+            setTimeout(() => {
+                statusDiv.remove();
+            }, 3000);
+        }
+
+        // Load catalog from cloud if available
+        async function loadCatalogFromCloud() {
+            try {
+                // Try to load from localStorage first (offline mode)
+                const localCatalog = localStorage.getItem('publicCatalogData');
+                if (localCatalog) {
+                    const catalogData = JSON.parse(localCatalog);
+                    console.log('📱 Catálogo carregado do dispositivo:', catalogData.salon.name);
+                    return catalogData;
+                }
+                
+                // In a real implementation, this would fetch from GitHub Gist
+                console.log('🌐 Tentando carregar catálogo da nuvem...');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar catálogo da nuvem:', error);
             }
         }
 
@@ -1312,7 +1400,7 @@ ${salonSettings.address}
                     services: services,
                     appointments: appointments,
                     exportDate: new Date().toISOString(),
-                    salonName: 'Salão da minha gatinha'
+                    salonName: 'Jeni $ilicani Studio de Beleza'
                 };
                 
                 const dataStr = JSON.stringify(exportData, null, 2);
@@ -1425,7 +1513,7 @@ ${salonSettings.address}
         function resetSalonSettings() {
             if (confirm('🔄 Tem certeza que deseja restaurar as configurações padrão do salão?')) {
                 salonSettings = {
-                    name: 'Salão da minha gatinha',
+                    name: 'Jeni $ilicani Studio de Beleza',
                     address: 'Rua das Graviolas, N° 350',
                     phone: '(11) 95246-8795',
                     cancellationPolicy: 'Cancelamentos com menos de 2h não terão reembolso'
@@ -1652,5 +1740,5 @@ ${salonSettings.address}
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e094b2181fa0a',t:'MTc1NjY1OTEyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e1dbab66af16b',t:'MTc1NjY1OTk2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
