@@ -56,7 +56,7 @@
     <header class="gradient-bg text-white p-4 shadow-lg">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold">💅 Salão da minha gatinha</h1>
+                <h1 id="headerTitle" class="text-2xl font-bold">💅 Salão da minha gatinha</h1>
                 <p class="text-pink-100 text-sm">Sistema de Gestão</p>
             </div>
             <div class="text-right">
@@ -87,6 +87,9 @@
             </button>
             <button onclick="showSection('appointments')" class="nav-btn flex-shrink-0 px-6 py-3 text-sm font-medium text-gray-600 hover:text-pink-600 border-b-2 border-transparent hover:border-pink-600 transition-colors">
                 📝 Agendamentos
+            </button>
+            <button onclick="showSection('settings')" class="nav-btn flex-shrink-0 px-6 py-3 text-sm font-medium text-gray-600 hover:text-pink-600 border-b-2 border-transparent hover:border-pink-600 transition-colors">
+                ⚙️ Configurações
             </button>
         </div>
     </nav>
@@ -220,6 +223,55 @@
         </div>
     </section>
 
+    <!-- Settings Section -->
+    <section id="settings" class="section hidden p-4">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Configurações do Salão</h2>
+            <p class="text-gray-600">Personalize as informações do seu salão</p>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Informações Básicas</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Salão</label>
+                    <input type="text" id="salonName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                    <input type="text" id="salonAddress" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Telefone (WhatsApp)</label>
+                    <input type="tel" id="salonPhone" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Política de Cancelamento</label>
+                    <textarea id="salonCancellationPolicy" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="saveSalonSettings()" class="flex-1 btn-primary text-white py-3 px-6 rounded-xl font-semibold">
+                💾 Salvar Configurações
+            </button>
+            <button onclick="resetSalonSettings()" class="bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-xl font-semibold">
+                🔄 Restaurar Padrão
+            </button>
+        </div>
+
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-6">
+            <div class="flex items-start">
+                <div class="text-yellow-600 text-xl mr-3">💡</div>
+                <div>
+                    <h4 class="font-semibold text-yellow-800 mb-1">Dica Importante</h4>
+                    <p class="text-sm text-yellow-700">Essas informações aparecerão nos comprovantes de agendamento enviados pelo WhatsApp e nos compromissos do Google Agenda.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Floating WhatsApp Button -->
     <button onclick="openWhatsApp()" class="floating-btn btn-primary text-white p-4 rounded-full shadow-lg">
         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -229,6 +281,13 @@
 
     <script>
         // Data storage
+        let salonSettings = {
+            name: 'Salão da minha gatinha',
+            address: 'Rua das Graviolas, N° 350',
+            phone: '(11) 95246-8795',
+            cancellationPolicy: 'Cancelamentos com menos de 2h não terão reembolso'
+        };
+        
         let services = [
             { category: 'Unhas', name: 'Esmaltação Simples', description: 'Esmaltação tradicional com cores variadas', price: 25 },
             { category: 'Unhas', name: 'Esmaltação em Gel', description: 'Esmaltação duradoura com acabamento profissional', price: 40 },
@@ -258,6 +317,7 @@
             generateServiceSelect();
             generateCalendar();
             generateTimeSlots();
+            loadSalonSettingsForm();
         });
 
         // Load data from localStorage with recovery options
@@ -266,6 +326,7 @@
                 // Try to load main data
                 const savedServices = localStorage.getItem('salonServices');
                 const savedAppointments = localStorage.getItem('salonAppointments');
+                const savedSettings = localStorage.getItem('salonSettings');
                 
                 if (savedServices) {
                     services = JSON.parse(savedServices);
@@ -275,6 +336,12 @@
                 if (savedAppointments) {
                     appointments = JSON.parse(savedAppointments);
                     console.log(`✅ ${appointments.length} agendamentos carregados do dispositivo`);
+                }
+                
+                if (savedSettings) {
+                    salonSettings = JSON.parse(savedSettings);
+                    console.log(`✅ Configurações do salão carregadas`);
+                    updateHeaderTitle();
                 }
                 
                 // Check for backup if main data is corrupted or missing
@@ -308,11 +375,13 @@
                 // Save main data
                 localStorage.setItem('salonServices', JSON.stringify(services));
                 localStorage.setItem('salonAppointments', JSON.stringify(appointments));
+                localStorage.setItem('salonSettings', JSON.stringify(salonSettings));
                 
                 // Create backup with timestamp
                 const backupData = {
                     services: services,
                     appointments: appointments,
+                    salonSettings: salonSettings,
                     lastBackup: new Date().toISOString(),
                     version: '1.0'
                 };
@@ -373,6 +442,8 @@
                 generateCalendar();
                 generateTimeSlots();
                 generateServiceSelect();
+            } else if (sectionName === 'settings') {
+                loadSalonSettingsForm();
             }
             
             // Reset edit mode when changing sections
@@ -906,7 +977,7 @@
                 
                 // Create event details
                 const eventTitle = `💅 ${appointment.service} - ${appointment.clientName}`;
-                const eventDetails = `📋 AGENDAMENTO SALÃO DA MINHA GATINHA
+                const eventDetails = `📋 AGENDAMENTO ${salonSettings.name.toUpperCase()}
 ━━━━━━━━━━━━━━━━━━━━━
 
 👤 Cliente: ${appointment.clientName}
@@ -916,15 +987,15 @@
 💳 Pagamento: ${appointment.paymentStatus.toUpperCase()}
 
 ━━━━━━━━━━━━━━━━━━━━━
-📍 Local: Salão da minha gatinha
-Rua das Flores, 123 - Centro
+📍 Local: ${salonSettings.name}
+${salonSettings.address}
 
 ⚠️ Lembrete:
 • Chegue 10 minutos antes
-• Ligue em caso de atraso
-• Cancelamentos com antecedência`;
+• Ligue em caso de atraso: ${salonSettings.phone}
+• ${salonSettings.cancellationPolicy}`;
 
-                const eventLocation = 'Salão da minha gatinha - Rua das Flores, 123, Centro';
+                const eventLocation = `${salonSettings.name} - ${salonSettings.address}`;
                 
                 // Create Google Calendar URL
                 const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${startFormatted}/${endFormatted}&details=${encodeURIComponent(eventDetails)}&location=${encodeURIComponent(eventLocation)}&sf=true&output=xml`;
@@ -960,7 +1031,7 @@ Rua das Flores, 123 - Centro
             const paymentEmoji = appointment.paymentStatus === 'pago' ? '✅' : '⏳';
             const paymentText = appointment.paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE';
             
-            const message = `💅 *SALÃO DA MINHA GATINHA*
+            const message = `💅 *${salonSettings.name.toUpperCase()}*
 ━━━━━━━━━━━━━━━━━━━━━
 
 📋 *COMPROVANTE DE AGENDAMENTO*
@@ -974,13 +1045,13 @@ ${paymentEmoji} *Pagamento:* ${paymentText}
 
 ━━━━━━━━━━━━━━━━━━━━━
 📍 *Endereço do Salão*
-Rua das Flores, 123 - Centro
-📞 *Telefone:* (11) 99999-9999
+${salonSettings.address}
+📞 *Telefone:* ${salonSettings.phone}
 
 ⚠️ *IMPORTANTE:*
 • Chegue 10 minutos antes
 • Em caso de atraso, ligue para reagendar
-• Cancelamentos com menos de 2h de antecedência serão cobrados
+• ${salonSettings.cancellationPolicy}
 
 ✨ Obrigada pela preferência! ✨
 💅 Nos vemos em breve!`;
@@ -1194,11 +1265,83 @@ Rua das Flores, 123 - Centro
             }
         }
 
+        // Update header title
+        function updateHeaderTitle() {
+            const headerTitle = document.getElementById('headerTitle');
+            if (headerTitle) {
+                headerTitle.textContent = `💅 ${salonSettings.name}`;
+            }
+        }
+
+        // Load salon settings form
+        function loadSalonSettingsForm() {
+            document.getElementById('salonName').value = salonSettings.name;
+            document.getElementById('salonAddress').value = salonSettings.address;
+            document.getElementById('salonPhone').value = salonSettings.phone;
+            document.getElementById('salonCancellationPolicy').value = salonSettings.cancellationPolicy;
+        }
+
+        // Save salon settings
+        function saveSalonSettings() {
+            const name = document.getElementById('salonName').value.trim();
+            const address = document.getElementById('salonAddress').value.trim();
+            const phone = document.getElementById('salonPhone').value.trim();
+            const cancellationPolicy = document.getElementById('salonCancellationPolicy').value.trim();
+
+            if (!name) {
+                alert('❌ Por favor, informe o nome do salão');
+                return;
+            }
+
+            if (!address) {
+                alert('❌ Por favor, informe o endereço do salão');
+                return;
+            }
+
+            if (!phone) {
+                alert('❌ Por favor, informe o telefone do salão');
+                return;
+            }
+
+            if (!cancellationPolicy) {
+                alert('❌ Por favor, informe a política de cancelamento');
+                return;
+            }
+
+            salonSettings.name = name;
+            salonSettings.address = address;
+            salonSettings.phone = phone;
+            salonSettings.cancellationPolicy = cancellationPolicy;
+
+            saveData();
+            updateHeaderTitle();
+
+            alert('✅ Configurações salvas com sucesso!\n\n📱 As novas informações aparecerão nos próximos agendamentos e mensagens do WhatsApp.');
+        }
+
+        // Reset salon settings to default
+        function resetSalonSettings() {
+            if (confirm('🔄 Tem certeza que deseja restaurar as configurações padrão do salão?')) {
+                salonSettings = {
+                    name: 'Salão da minha gatinha',
+                    address: 'Rua das Graviolas, N° 350',
+                    phone: '(11) 95246-8795',
+                    cancellationPolicy: 'Cancelamentos com menos de 2h não terão reembolso'
+                };
+
+                loadSalonSettingsForm();
+                saveData();
+                updateHeaderTitle();
+
+                alert('✅ Configurações restauradas para o padrão!');
+            }
+        }
+
         // Open WhatsApp
         function openWhatsApp() {
-            const message = encodeURIComponent('Olá! Gostaria de agendar um horário no Salão da minha gatinha! 💅✨');
+            const message = encodeURIComponent(`Olá! Gostaria de agendar um horário no ${salonSettings.name}! 💅✨`);
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977dc28353137a84',t:'MTc1NjY1NjIyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977dd63e23fa80fe',t:'MTc1NjY1NzAzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
